@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Admin – Orders Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-hero {
+        background: linear-gradient(135deg, rgba(255,107,53,.1) 0%, transparent 60%);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .dash-hero h1 { font-weight: 800; }
+    .orders-table th {
+        color: #aaa;
+        font-weight: 600;
+        border-color: rgba(255,255,255,.06);
+        white-space: nowrap;
+    }
+    .orders-table td {
+        border-color: rgba(255,255,255,.06);
+        vertical-align: middle;
+    }
+    .orders-table tr:hover td { background: rgba(255,107,53,.04); }
+    .status-pending   { background: #ffc107; color: #000; }
+    .status-confirmed { background: #0dcaf0; color: #000; }
+    .status-delivered { background: #198754; color: #fff; }
+    .status-rejected  { background: #dc3545; color: #fff; }
+    .stat-card {
+        background: linear-gradient(145deg, #1a1d23, #16181e);
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: .75rem;
+        padding: 1.25rem;
+        text-align: center;
+    }
+    .stat-card .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .stat-card .stat-label { color: #888; font-size: .85rem; }
+    .btn-action {
+        border: none;
+        padding: .3rem .65rem;
+        font-size: .78rem;
+        border-radius: .4rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity .2s;
+    }
+    .btn-action:hover { opacity: .85; }
+    .btn-accept   { background: #198754; color: #fff; }
+    .btn-reject   { background: #dc3545; color: #fff; }
+    .btn-deliver  { background: #0dcaf0; color: #000; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-hero">
+    <h1><i class="bi bi-speedometer2 me-2"></i>Orders Dashboard</h1>
+    <p class="text-secondary mb-0">View and manage all incoming orders.</p>
+</div>
+
+<!-- Quick stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num">{{ orders|length }}</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num">{{ orders|selectattr('status','equalto','Pending')|list|length }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-num">₹{{ "%.0f"|format(orders|sum(attribute='total_price')) }}</div>
+            <div class="stat-label">Revenue</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-color: #198754;">
+            <div class="stat-num" style="color: #198754;">₹{{ "%.2f"|format(daily_total) }}</div>
+            <div class="stat-label">Daily Collection (Today)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Orders table -->
+{% if orders %}
+<div class="table-responsive">
+    <table class="table table-dark orders-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th><i class="bi bi-person me-1"></i>Customer</th>
+                <th><i class="bi bi-telephone me-1"></i>Phone</th>
+                <th><i class="bi bi-box me-1"></i>Items</th>
+                <th><i class="bi bi-currency-rupee me-1"></i>Total</th>
+                <th><i class="bi bi-geo-alt me-1"></i>Address</th>
+                <th><i class="bi bi-clock me-1"></i>Ordered At</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td class="fw-bold">{{ order.id }}</td>
+                <td>{{ order.customer.username }}</td>
+                <td>{{ order.customer.phone or '—' }}</td>
+                <td class="small" style="max-width:250px">{{ order.items_summary }}</td>
+                <td class="fw-bold" style="color:var(--accent)">₹{{ "%.2f"|format(order.total_price) }}</td>
+                <td style="max-width:200px" class="small">{{ order.delivery_address }}</td>
+                <td>
+                    <div class="fw-bold small">{{ order.created_at.strftime('%I:%M %p') }}</div>
+                    <div class="text-secondary" style="font-size: .7rem;">{{ order.created_at.strftime('%d %b %Y') }}</div>
+                </td>
+                <td>
+                    <span class="badge badge-status
+                        {% if order.status == 'Pending' %}status-pending
+                        {% elif order.status == 'Confirmed' %}status-confirmed
+                        {% elif order.status == 'Rejected' %}status-rejected
+                        {% else %}status-delivered{% endif %}">
+                        {{ order.status }}
+                    </span>
+                </td>
+                <td>
+                    {% if order.status == 'Pending' %}
+                    <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline">
+                        <input type="hidden" name="status" value="Confirmed">
+                        <button type="submit" class="btn-action btn-accept me-1" title="Accept Order">
+                            <i class="bi bi-check-lg"></i> Accept
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline">
+                        <input type="hidden" name="status" value="Rejected">
+                        <button type="submit" class="btn-action btn-reject" title="Reject Order">
+                            <i class="bi bi-x-lg"></i> Reject
+                        </button>
+                    </form>
+                    {% elif order.status == 'Confirmed' %}
+                    <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline">
+                        <input type="hidden" name="status" value="Delivered">
+                        <button type="submit" class="btn-action btn-deliver" title="Mark Delivered">
+                            <i class="bi bi-truck"></i> Delivered
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="text-secondary small">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox display-3 text-secondary"></i>
+    <p class="text-secondary mt-3">No orders have been placed yet.</p>
+</div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}My Orders – FoodDash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-card {
+        background: linear-gradient(145deg, #1a1d23, #16181e);
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: .75rem;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+        transition: border-color .2s;
+    }
+    .order-card:hover { border-color: rgba(255,107,53,.2); }
+    .status-pending   { background: #ffc107; color: #000; }
+    .status-confirmed { background: #0dcaf0; color: #000; }
+    .status-delivered { background: #198754; color: #fff; }
+    .status-rejected  { background: #dc3545; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-bag-check me-2 text-warning"></i>My Orders</h2>
+
+{% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <span class="fw-bold">Order #{{ order.id }}</span>
+                <span class="badge badge-status ms-2
+                    {% if order.status == 'Pending' %}status-pending
+                    {% elif order.status == 'Confirmed' %}status-confirmed
+                    {% elif order.status == 'Rejected' %}status-rejected
+                    {% else %}status-delivered{% endif %}">
+                    {{ order.status }}
+                </span>
+            </div>
+            <span class="fw-bold" style="color:var(--accent)">₹{{ "%.2f"|format(order.total_price) }}</span>
+        </div>
+        <p class="text-secondary small mb-1"><i class="bi bi-box me-1"></i>{{ order.items_summary }}</p>
+        <p class="text-secondary small mb-0"><i class="bi bi-geo-alt me-1"></i>{{ order.delivery_address }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x display-3 text-secondary"></i>
+        <p class="text-secondary mt-3">You haven't placed any orders yet.</p>
+        <a href="{{ url_for('menu') }}" class="btn btn-accent px-4">Browse Menu</a>
+    </div>
+{% endif %}
+{% endblock %}
