@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Checkout – FoodDash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-card {
+        background: var(--card-bg);
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+    }
+    .summary-table th { 
+        color: var(--heading); 
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(0,0,0,0.05);
+    }
+    .summary-table td { 
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 1rem 0;
+    }
+    .total-row td { 
+        font-size: 1.25rem; 
+        font-weight: 800; 
+        color: var(--primary); 
+        border-bottom: none;
+        padding-top: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-5">
+            <h2 class="fw-800"><i class="bi bi-bag-check me-2 text-primary"></i>Checkout</h2>
+            <p class="text-secondary small">Review your items and enter delivery details</p>
+        </div>
+
+        <div class="checkout-card mb-5 shadow-sm">
+            <h5 class="mb-4 fw-bold">Order Summary</h5>
+            <table class="table summary-table mb-0">
+                <thead>
+                    <tr><th>Item</th><th class="text-center">Qty</th><th class="text-end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                    {% for item, qty in cart_items %}
+                    <tr>
+                        <td class="fw-bold">{{ item.name }}</td>
+                        <td class="text-center"><span class="badge bg-light text-dark px-3 py-2 rounded-pill border">{{ qty }}</span></td>
+                        <td class="text-end fw-bold text-secondary">₹{{ "%.2f"|format(item.price * qty) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="2">Total Amount</td>
+                        <td class="text-end">₹{{ "%.2f"|format(total) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="checkout-card shadow-sm">
+            <h5 class="mb-4 fw-bold"><i class="bi bi-geo-alt me-2 text-primary"></i>Delivery Details</h5>
+            <form method="POST" action="{{ url_for('checkout') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="delivery_address" class="form-label small fw-bold text-uppercase opacity-75">Delivery Hostel Block</label>
+                        <select class="form-select form-select-lg" id="delivery_address" name="delivery_address" required>
+                            <option value="" selected disabled>Select block...</option>
+                            <option value="NC-1">NC-1</option>
+                            <option value="NC-2">NC-2</option>
+                            <option value="NC-3">NC-3</option>
+                            <option value="NC-4">NC-4</option>
+                            <option value="NC-5">NC-5</option>
+                            <option value="NC-6">NC-6</option>
+                            <option value="NC-7">NC-7</option>
+                            <option value="NC-8">NC-8</option>
+                            <option value="NC-9">NC-9</option>
+                            <option value="NC-10">NC-10</option>
+                            <option value="NC-11">NC-11</option>
+                            <option value="NC-12">NC-12</option>
+                            <option value="NC-13">NC-13</option>
+                            <option value="NC-14">NC-14</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label for="room_number" class="form-label small fw-bold text-uppercase opacity-75">Room Number</label>
+                        <select class="form-select form-select-lg" id="room_number" name="room_number" required onchange="toggleOtherRoom(this.value)">
+                            <option value="" selected disabled>Select room...</option>
+                            {% for i in range(1, 51) %}
+                                <option value="{{ i }}">{{ i }}</option>
+                            {% endfor %}
+                            <option value="Other">Other (Above 50)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="other_room_container" class="mb-4" style="display: none;">
+                    <label for="other_room" class="form-label small fw-bold text-uppercase opacity-75">Specify Room Number</label>
+                    <input type="number" min="51" class="form-control form-control-lg" id="other_room" name="other_room" placeholder="Enter room number">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow mt-2 fw-bold">
+                    <i class="bi bi-cart-check-fill me-2 fs-5"></i>Place Order &mdash; ₹{{ "%.2f"|format(total) }}
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center mt-5 mb-5">
+            <a href="{{ url_for('menu') }}" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to Menu</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleOtherRoom(value) {
+        const container = document.getElementById('other_room_container');
+        const input = document.getElementById('other_room');
+        if (value === 'Other') {
+            container.style.display = 'block';
+            input.required = true;
+        } else {
+            container.style.display = 'none';
+            input.required = false;
+        }
+    }
+</script>
+{% endblock %}

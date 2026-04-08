@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Menu – FoodDash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .menu-hero {
+        background-color: var(--midnight);
+        color: #fff;
+        border-radius: 2rem;
+        padding: 4rem 3rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .menu-hero h1 { 
+        font-weight: 800; 
+        font-size: 3.5rem;
+        letter-spacing: -2px;
+        color: #fff;
+    }
+    .menu-hero::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+        opacity: 0.15;
+        z-index: 0;
+    }
+    .menu-hero > * { position: relative; z-index: 1; }
+    
+    .item-card { 
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: var(--transition);
+    }
+    .item-card:hover {
+        border-color: rgba(255, 56, 56, 0.2);
+    }
+    .item-card .card-body { padding: 1.5rem; }
+    .item-price { 
+        color: var(--primary); 
+        font-size: 1.5rem; 
+        font-weight: 800; 
+    }
+    .qty-badge { 
+        background: var(--primary); 
+        color: #fff; 
+        font-weight: 700; 
+        font-size: 0.85rem; 
+        padding: 0.4em 0.8em; 
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 10px rgba(255, 56, 56, 0.2);
+    }
+    .card-img-container {
+        position: relative;
+        padding-top: 66%; /* 3:2 Aspect Ratio */
+        overflow: hidden;
+    }
+    .card-img-container img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .item-card:hover .card-img-container img {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="menu-hero shadow-lg">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1 class="mb-2">Our Menu</h1>
+            <p class="lead opacity-75 mb-0">Discover recipes made with love and fresh ingredients.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+            <div class="d-inline-flex align-items-center bg-white bg-opacity-10 rounded-pill px-4 py-2">
+                <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                <span class="small fw-bold">Delivering to You</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-5">
+    {% for item in items %}
+    <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="card item-card h-100">
+            <div class="card-img-container">
+                {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='images/' ~ item.image_filename) }}" 
+                         alt="{{ item.name }}"
+                         onerror="this.src='https://placehold.co/600x400?text={{ item.name|urlencode }}'">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/' ~ item.name.lower().replace(' ', '_') ~ '.png') }}" 
+                         alt="{{ item.name }}"
+                         onerror="this.src='https://placehold.co/600x400?text={{ item.name|urlencode }}'">
+                {% endif %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ item.name }}</h5>
+                    <div class="small"><i class="bi bi-star-fill rating-star"></i> 4.8</div>
+                </div>
+                <p class="card-text text-secondary small flex-grow-1 opacity-75">{{ item.description }}</p>
+                <div class="d-flex align-items-center justify-content-between mt-4">
+                    <span class="item-price">₹{{ "%.2f"|format(item.price) }}</span>
+
+                    {% set qty = cart.get(item.id|string, 0) %}
+                    {% if qty > 0 %}
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="POST" action="{{ url_for('remove_from_cart', item_id=item.id) }}">
+                                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:34px;height:34px;"><i class="bi bi-dash"></i></button>
+                            </form>
+                            <span class="qty-badge">{{ qty }}</span>
+                            <form method="POST" action="{{ url_for('add_to_cart', item_id=item.id) }}">
+                                <button class="btn btn-sm btn-primary rounded-circle d-flex align-items-center justify-content-center shadow" style="width:34px;height:34px;"><i class="bi bi-plus"></i></button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('add_to_cart', item_id=item.id) }}">
+                            <button class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-bag-plus me-1"></i> Add
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if cart %}
+<div class="fixed-bottom p-4 text-center" style="z-index: 1000;">
+    <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg px-5 py-3 shadow-lg rounded-pill" style="border: 4px solid var(--card-bg) !important;">
+        <i class="bi bi-cart-check-fill me-2 fs-5"></i>Proceed to Checkout ({{ cart.values()|sum }} items)
+    </a>
+</div>
+<div style="height: 100px;"></div> <!-- Spacer -->
+{% endif %}
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Admin – Manage Menu{% endblock %}
+
+{% block extra_css %}
+<style>
+    .menu-dash-header {
+        background-color: var(--midnight);
+        color: #fff;
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .menu-dash-header h1 {
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .item-img-preview {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        background: #f0f0f0;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .menu-table th {
+        color: var(--heading);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        background-color: rgba(0,0,0,0.02);
+        border-bottom: 2px solid #eee;
+    }
+
+    .menu-table td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1rem 0.75rem;
+    }
+
+    .menu-table tr:hover td { background-color: #fafafa; }
+
+    .btn-edit {
+        background: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .btn-edit:hover { background: #0dcaf0; color: #fff; }
+
+    .btn-delete {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: var(--transition);
+    }
+    .btn-delete:hover { background: #dc3545; color: #fff; }
+
+    /* For smaller screens to stack the header nicely */
+    @media (max-width: 768px) {
+        .menu-dash-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="menu-dash-header shadow">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-list-task me-2 text-primary"></i>Manage Menu</h1>
+        <p class="opacity-75 mb-0">Update item details, prices, and images.</p>
+    </div>
+    <a href="{{ url_for('add_menu_item') }}" class="btn btn-primary px-4 py-2 shadow-sm fs-6">
+        <i class="bi bi-plus-lg me-1"></i> Add New Item
+    </a>
+</div>
+
+{% if items %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table mb-0 menu-table">
+            <thead>
+                <tr>
+                    <th class="ps-4">Image</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Description</th>
+                    <th class="pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="ps-4">
+                        {% if item.image_filename %}
+                        <img src="{{ url_for('static', filename='images/' + item.image_filename) }}"
+                            class="item-img-preview" alt="{{ item.name }}"
+                            onerror="this.src='https://placehold.co/64x64?text=Img'">
+                        {% else %}
+                        <img src="https://placehold.co/64x64?text=No+Img" class="item-img-preview" alt="No image">
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold">{{ item.name }}</td>
+                    <td class="fw-800 text-primary">₹{{ "%.2f"|format(item.price) }}</td>
+                    <td class="small text-secondary" style="max-width: 300px;">{{ item.description or '—' }}</td>
+                    <td class="pe-4">
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('edit_menu_item', item_id=item.id) }}" class="btn-edit shadow-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+                            <form action="{{ url_for('delete_menu_item', item_id=item.id) }}" method="POST"
+                                onsubmit="return confirm('Are you sure you want to delete \'{{ item.name }}\'?');">
+                                <button type="submit" class="btn-delete shadow-sm">
+                                    <i class="bi bi-trash me-1"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5 card shadow-sm border-0">
+    <i class="bi bi-egg-fried display-3 text-secondary opacity-25"></i>
+    <p class="text-secondary mt-3 fw-bold">Your menu is empty.</p>
+    <div class="mt-2">
+        <a href="{{ url_for('add_menu_item') }}" class="btn btn-primary px-4">Add your first item</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

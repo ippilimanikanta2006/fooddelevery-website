@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Admin – Orders Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-hero {
+        background-color: var(--midnight);
+        color: #fff;
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+    }
+    .dash-hero h1 { font-weight: 800; color: #fff; }
+    
+    .orders-table th {
+        color: var(--heading);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        background-color: rgba(0,0,0,0.02);
+        border-bottom: 2px solid #eee;
+    }
+    .orders-table td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1.25rem 0.75rem;
+    }
+    .orders-table tr:hover td { background-color: #fafafa; }
+    
+    .status-pending   { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d1ecf1; color: #0c5460; }
+    .status-delivered { background: #d4edda; color: #155724; }
+    .status-rejected  { background: #f8d7da; color: #721c24; }
+    
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 1.25rem;
+        padding: 2rem 1.5rem;
+        transition: var(--transition);
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-card .stat-num { font-size: 2.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
+    .stat-card .stat-label { color: var(--body-text); font-size: 0.9rem; font-weight: 600; opacity: 0.7; }
+    
+    .stat-card-accent {
+        background-color: var(--midnight);
+        color: #fff;
+    }
+    .stat-card-accent .stat-num { color: var(--primary); }
+    .stat-card-accent .stat-label { color: rgba(255,255,255,0.7); }
+
+    .btn-action {
+        border-radius: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: var(--transition);
+        border: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-hero shadow">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2"><i class="bi bi-speedometer2 me-2 text-primary"></i>Orders Dashboard</h1>
+            <p class="opacity-75 mb-0">Operational control center for FoodDash.</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="bg-white bg-opacity-10 rounded-pill px-4 py-2 d-inline-block">
+                <span class="small fw-bold"><i class="bi bi-clock-fill me-2"></i>Live System Status</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick stats -->
+<div class="row g-4 mb-5">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card shadow-sm">
+            <div class="stat-num">{{ orders|length }}</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card shadow-sm">
+            <div class="stat-num">{{ orders|selectattr('status','equalto','Pending')|list|length }}</div>
+            <div class="stat-label">Pending Acceptance</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card shadow-sm">
+            <div class="stat-num">₹{{ "%.0f"|format(orders|sum(attribute='total_price')) }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-accent shadow-lg">
+            <div class="stat-num">₹{{ "%.2f"|format(daily_total) }}</div>
+            <div class="stat-label">Daily Collection</div>
+        </div>
+    </div>
+</div>
+
+<!-- Orders table -->
+{% if orders %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table mb-0 orders-table">
+            <thead>
+                <tr>
+                    <th class="ps-4">No.</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Destination</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th class="pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td class="ps-4 fw-800 text-secondary">#{{ order.id }}</td>
+                    <td>
+                        <div class="fw-bold">{{ order.customer.username }}</div>
+                        <div class="small text-secondary"><i class="bi bi-telephone me-1"></i>{{ order.customer.phone or '—' }}</div>
+                    </td>
+                    <td class="small" style="max-width:250px">{{ order.items_summary }}</td>
+                    <td class="fw-800 text-primary">₹{{ "%.2f"|format(order.total_price) }}</td>
+                    <td style="max-width:200px" class="small text-secondary">{{ order.delivery_address }}</td>
+                    <td>
+                        <div class="fw-bold small">{{ order.created_at.strftime('%I:%M %p') }}</div>
+                        <div class="text-secondary" style="font-size: .7rem;">{{ order.created_at.strftime('%d %b %Y') }}</div>
+                    </td>
+                    <td>
+                        <span class="badge rounded-pill 
+                            {% if order.status == 'Pending' %}status-pending
+                            {% elif order.status == 'Confirmed' %}status-confirmed
+                            {% elif order.status == 'Rejected' %}status-rejected
+                            {% else %}status-delivered{% endif %}" style="padding: 0.5em 1em;">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td class="pe-4">
+                        {% if order.status == 'Pending' %}
+                        <div class="d-flex gap-2">
+                            <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}">
+                                <input type="hidden" name="status" value="Confirmed">
+                                <button type="submit" class="btn-action btn-success shadow-sm" title="Accept Order">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}">
+                                <input type="hidden" name="status" value="Rejected">
+                                <button type="submit" class="btn-action btn-danger shadow-sm" title="Reject Order">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% elif order.status == 'Confirmed' %}
+                        <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}">
+                            <input type="hidden" name="status" value="Delivered">
+                            <button type="submit" class="btn-action btn-info text-white shadow-sm w-100" title="Mark Delivered">
+                                <i class="bi bi-truck me-1"></i> Deliver
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-secondary small">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="stat-card text-center py-5 shadow-sm">
+    <i class="bi bi-inbox display-4 text-secondary opacity-25"></i>
+    <p class="text-secondary mt-3 fw-bold">No orders found.</p>
+</div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}My Orders – FoodDash{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-card {
+        background: var(--card-bg);
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        transition: var(--transition);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+    .order-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+        border-color: rgba(255, 56, 56, 0.2);
+    }
+
+    .badge-status {
+        padding: 0.5em 1em;
+        font-weight: 700;
+        font-size: 0.75rem;
+        border-radius: 2rem;
+    }
+    .status-pending   { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d1ecf1; color: #0c5460; }
+    .status-delivered { background: #d4edda; color: #155724; }
+    .status-rejected  { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row py-4">
+    <div class="col-lg-10 mx-auto">
+        <div class="d-flex align-items-center mb-5">
+            <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle me-3">
+                <i class="bi bi-clock-history fs-3"></i>
+            </div>
+            <div>
+                <h2 class="fw-800 mb-0">My Orders</h2>
+                <p class="text-secondary small mb-0">Track your recent food adventures</p>
+            </div>
+        </div>
+
+        {% if orders %}
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <span class="fw-800 fs-5 text-heading">Order #{{ order.id }}</span>
+                            <span class="badge badge-status
+                                {% if order.status == 'Pending' %}status-pending
+                                {% elif order.status == 'Confirmed' %}status-confirmed
+                                {% elif order.status == 'Rejected' %}status-rejected
+                                {% else %}status-delivered{% endif %}">
+                                {{ order.status }}
+                            </span>
+                        </div>
+                        <p class="text-secondary small fw-medium mb-1"><i class="bi bi-box-seam me-2"></i>{{ order.items_summary }}</p>
+                        <p class="text-secondary small fw-medium mb-0"><i class="bi bi-geo-alt-fill me-2 text-primary"></i>{{ order.delivery_address }}</p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <span class="fw-800 fs-4 text-primary">₹{{ "%.2f"|format(order.total_price) }}</span>
+                        <div class="text-secondary small mt-1">{{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5 card shadow-sm border-0" style="border-radius: 1.5rem;">
+                <i class="bi bi-cart-x display-3 text-secondary opacity-25"></i>
+                <p class="text-secondary mt-3 fw-bold">You haven't placed any orders yet.</p>
+                <div class="mt-2">
+                    <a href="{{ url_for('menu') }}" class="btn btn-primary px-4 shadow-sm">Browse Menu</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
